@@ -63,14 +63,23 @@ function analyzeSalesData(data, options) {
     let totalRev = 0;
     let totalCost = 0;
     let totalCount = 0;
+    let productStat = new Map();
     seller.products_sold.forEach((sale) => {
       totalRev += calculateRevenue(sale);
       totalCost += calculateTottalPurchasePrice(sale, products);
       totalCount += sale.quantity;
+      if (productStat.has(sale.sku)) {
+        productStat.set(sale.sku, productStat.get(sale.sku) + 1);
+      } else {
+        productStat.set(sale.sku, 1);
+      }
     });
+    let productSortedStat = new Array([...productStat.values()].sort((item1, item2) => item2 - item1));
+    productSortedStat.slice(0, 9);
     seller.revenue = totalRev;
     seller.profit = totalRev - totalCost;
     seller.sales_count = totalCount;
+    seller["topSales"] = productSortedStat;
   });
 
   sortedSaleData = salesData.toSorted(
@@ -78,14 +87,14 @@ function analyzeSalesData(data, options) {
   );
 
   for (let i = 0; i < sortedSaleData.length; i++) {
-    sortedSaleData[i]["bonus"] = calculateBonusByProfit(
+    sortedSaleData[i]["bonus"] = calculateBonus(
       i + 1,
       sortedSaleData.length + 1,
       sortedSaleData[i]
     );
   }
 
-  console.log(sortedSaleData);
+  return sortedSaleData;
 }
 
 /**
