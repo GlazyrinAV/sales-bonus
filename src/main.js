@@ -62,17 +62,28 @@ function analyzeSalesData(data, options) {
   salesData.forEach((seller) => {
     let totalRev = 0;
     let totalCost = 0;
+    let totalCount = 0;
     seller.products_sold.forEach((sale) => {
       totalRev += calculateRevenue(sale);
       totalCost += calculateTottalPurchasePrice(sale, products);
+      totalCount += sale.quantity;
     });
     seller.revenue = totalRev;
     seller.profit = totalRev - totalCost;
+    seller.sales_count = totalCount;
   });
 
   sortedSaleData = salesData.toSorted(
     (seller1, seller2) => seller2.profit - seller1.profit
   );
+
+  for (let i = 0; i < sortedSaleData.length; i++) {
+    sortedSaleData[i]["bonus"] = calculateBonusByProfit(
+      i + 1,
+      sortedSaleData.length + 1,
+      sortedSaleData[i]
+    );
+  }
 
   console.log(sortedSaleData);
 }
@@ -117,7 +128,7 @@ function cosolidateSales(sellers, sales) {
 }
 
 /**
- * 
+ *
  * @param purchase - данные о сделке
  * @param {*} products - массив со всеми товарами
  * @returns - общую себестоимость
