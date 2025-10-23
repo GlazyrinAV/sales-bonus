@@ -5,7 +5,9 @@
  * @returns {number}
  */
 function calculateSimpleRevenue(purchase, _product) {
-   // @TODO: Расчет выручки от операции
+  const { discount, sale_price, quantity } = purchase;
+
+  return sale_price * quantity * (1 - discount / 100);
 }
 
 /**
@@ -16,7 +18,21 @@ function calculateSimpleRevenue(purchase, _product) {
  * @returns {number}
  */
 function calculateBonusByProfit(index, total, seller) {
-    // @TODO: Расчет бонуса от позиции в рейтинге
+  const { profit } = seller;
+
+  if (!seller || !index || !total || total <= 0) {
+    throw new Error("Некорректные входные данные");
+  }
+
+  if (index === 1) {
+    return profit * 0.15;
+  } else if (index === 2) {
+    return profit * 0.1;
+  } else if (index > 2 && index < total) {
+    return profit * 0.05;
+  } else {
+    return 0;
+  }
 }
 
 /**
@@ -26,19 +42,103 @@ function calculateBonusByProfit(index, total, seller) {
  * @returns {{revenue, top_products, bonus, name, sales_count, profit, seller_id}[]}
  */
 function analyzeSalesData(data, options) {
-    // @TODO: Проверка входных данных
+  const { calculateRevenue, calculateBonus } = options;
 
-    // @TODO: Проверка наличия опций
+  if (!data || !options) {
+    throw new Error("Некорректные входные данные");
+  }
 
-    // @TODO: Подготовка промежуточных данных для сбора статистики
+  const sellers = Object.values(data.sellers);
 
-    // @TODO: Индексация продавцов и товаров для быстрого доступа
+  const products = Object.values(data.products);
 
-    // @TODO: Расчет выручки и прибыли для каждого продавца
+  const recordsBySeller = groupBy(
+    data.purchase_records,
+    (item) => item.seller_id
+  );
 
-    // @TODO: Сортировка продавцов по прибыли
+  const salesData = cosolidateSales(sellers, recordsBySeller);
 
-    // @TODO: Назначение премий на основе ранжирования
+  salesData.forEach((seller) => {
+    let totalRev = 0;
+    let totalCost = 0;
+    seller.products_sold.forEach((sale) => {
+      totalRev += calculateRevenue(sale);
+      totalCost += calculateTottalPurchasePrice(sale, products);
+    });
+    seller.revenue = totalRev;
+    seller.profit = totalRev - totalCost;
+  });
 
-    // @TODO: Подготовка итоговой коллекции с нужными полями
+  sortedSaleData = salesData.toSorted(
+    (seller1, seller2) => seller2.profit - seller1.profit
+  );
+
+  console.log(sortedSaleData);
 }
+
+/**
+ *
+ * @param array - массив данных для сортировки
+ * @param groupFunc - функция для определения параметра сортировки
+ * @returns - массив с группированными данными
+ */
+function groupBy(array, groupFunc) {
+  return array.reduce((result, item) => {
+    const key = groupFunc(item);
+    if (!result[key]) {
+      result[key] = [];
+    } else {
+      result[key].push(item);
+    }
+    return result;
+  }, {});
+}
+
+/**
+ *
+ * @param sellers - массив данных с продавцами
+ * @param sales - объект с данными о продажах в группировке по продавцам
+ * @returns - массив с данными о продавце и проданных им товаров
+ */
+function cosolidateSales(sellers, sales) {
+  const salesData = [];
+  sellers.forEach((item) => {
+    const sallerData = {};
+    sallerData.id = item.id;
+    sallerData.name = `${item.first_name} ${item.last_name}`;
+    sallerData["revenue"] = 0;
+    sallerData["profit"] = 0;
+    sallerData["sales_count"] = 0;
+    sallerData["products_sold"] = sales[item.id].flatMap((item) => item.items);
+    salesData.push(sallerData);
+  });
+  return salesData;
+}
+
+/**
+ * 
+ * @param purchase - данные о сделке
+ * @param {*} products - массив со всеми товарами
+ * @returns - общую себестоимость
+ */
+function calculateTottalPurchasePrice(purchase, products) {
+  const { sku, quantity } = purchase;
+
+  let product = products.find((item) => item.sku === sku);
+
+  return product.purchase_price * quantity;
+}
+
+// function calculateRevenue(salesData, options) {
+//   const { calculateRevenue } = options;
+
+//   salesData.forEach((seller) => {
+//     let totalRev = 0;
+//     seller.products_sold.forEach((sale) => {
+//       totalRev += calculateRevenue(sale);
+//       console.log(totalRev);
+//     });
+//     seller.revenue = totalRev;
+//   });
+// }
