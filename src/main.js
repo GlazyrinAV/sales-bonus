@@ -60,7 +60,7 @@ function analyzeSalesData(data, options) {
 
   const sellers = Object.values(data.sellers);
 
-  const products = Object.values(data.products);
+  const products = groupProductsBySku(data);
 
   const recordsBySeller = groupBy(
     data.purchase_records,
@@ -68,23 +68,15 @@ function analyzeSalesData(data, options) {
   );
 
   sellers.forEach((seller) => {
-    const sellerData = {};
-
-    sellerData.seller_id = seller.id;
-    sellerData.name = `${seller.first_name} ${seller.last_name}`;
-    sellerData["revenue"] = 0;
-    sellerData["profit"] = 0;
-    sellerData["sales_count"] = 0;
+    const sellerData = createNewSellerData(seller, recordsBySeller);
     salesData.push(sellerData);
 
     let totalRev = 0;
     let totalCost = 0;
     let totalProfit = 0;
-    let totalCount = recordsBySeller[seller.id].length;
     let productStat = [];
     let products_sold = {};
-
-    let totalSales = recordsBySeller[`${seller.id}`].flatMap(
+    let totalSales = recordsBySeller[sellerData.seller_id].flatMap(
       (item) => item.items
     );
 
@@ -96,19 +88,9 @@ function analyzeSalesData(data, options) {
       productStat = getProductStats(sale, products_sold);
     });
 
-    productStat = Object.entries(products_sold).map(([k, v]) => {
-      let sku = {};
-      sku.sku = k;
-      sku.quantity = v;
-      return sku;
-    });
-    productStat.sort((item1, item2) => item2.quantity - item1.quantity);
-    productStat = productStat.slice(0, 10);
-
     sellerData.revenue = +sellerData.revenue.toFixed(2);
     sellerData.profit = +totalProfit.toFixed(2);
-    sellerData.sales_count = totalCount;
-    sellerData["top_products"] = productStat;
+    sellerData["top_products"] = getBestProducts(products_sold);
   });
 
   sortedSaleData = salesData.sort(
@@ -145,6 +127,17 @@ function groupBy(array, groupFunc) {
   }, {});
 }
 
+function groupProductsBySku(data) {
+  let products = {};
+
+  Object.values(data.products).map((item) => {
+    products[item.sku] = item.purchase_price;
+    return products;
+  });
+
+  return products;
+}
+
 /**
  *
  * @param purchase - данные о сделке
@@ -154,9 +147,9 @@ function groupBy(array, groupFunc) {
 function calculateCost(purchase, products) {
   const { sku, quantity } = purchase;
 
-  let product = products.find((item) => item.sku === sku);
+  let product = products[sku];
 
-  return product.purchase_price * quantity;
+  return product * quantity;
 }
 
 function getProductStats(sale, products_sold) {
@@ -168,4 +161,27 @@ function getProductStats(sale, products_sold) {
   }
 
   return products_sold;
+}
+
+function getBestProducts(products_sold) {
+  let productStat = Object.entries(products_sold).map(([k, v]) => {
+    let sku = {};
+    sku.sku = k;
+    sku.quantity = v;
+    return sku;
+  });
+  productStat.sort((item1, item2) => item2.quantity - item1.quantity);
+  return productStat.slice(0, 10);
+}
+
+function createNewSellerData(seller, recordsBySeller) {
+  const sellerData = {};
+
+  sellerData["seller_id"] = seller.id;
+  sellerData["name"] = `${seller.first_name} ${seller.last_name}`;
+  sellerData["revenue"] = 0;
+  sellerData["profit"] = 0;
+  sellerData["sales_count"] = recordsBySeller[seller.id].length;
+
+  return sellerData;
 }
