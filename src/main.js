@@ -26,7 +26,7 @@ function calculateBonusByProfit(index, total, seller) {
 
   if (index === 0) {
     return profit * 0.15;
-  } else if (index === 1) {
+  } else if (index === 1 || index === 2) {
     return profit * 0.1;
   } else if (index === total - 1) {
     return 0;
