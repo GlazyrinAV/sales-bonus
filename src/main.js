@@ -67,7 +67,7 @@ function analyzeSalesData(data, options) {
     sallerData["revenue"] = 0;
     sallerData["profit"] = 0;
     sallerData["sales_count"] = 0;
-    sallerData["products_sold"] = [];
+    sallerData["products_sold"] = {};
     salesData.push(sallerData);
 
     let totalRev = 0;
@@ -86,10 +86,10 @@ function analyzeSalesData(data, options) {
       productStat = getProductStats(sale, sallerData);
     });
 
-    productStat = Object.values(sallerData.products_sold).map((item) => {
+    productStat = Object.entries(sallerData.products_sold).map(([k, v]) => {
       let sku = {};
-      sku.sku = item.sku;
-      sku.quantity = item.quantity;
+      sku.sku = k;
+      sku.quantity = v;
       return sku;
     });
     productStat.sort((item1, item2) => item2.quantity - item1.quantity);
@@ -151,13 +151,11 @@ function calculateTotalPurchasePrice(purchase, products) {
 function getProductStats(sale, sallerData) {
   const { products_sold } = sallerData;
 
-  let product = products_sold.find((item) => item.sku === sale.sku);
-  if (product == null) {
-    let sku = { ...sale };
-    sku.quantity = 1;
-    products_sold.push(sku);
+  if (products_sold[`${sale.sku}`] == null) {
+    let sku = {};
+    products_sold[`${sale.sku}`] = 1;
   } else {
-    product.quantity += 1;
+    products_sold[`${sale.sku}`] += 1;
   }
 }
 
