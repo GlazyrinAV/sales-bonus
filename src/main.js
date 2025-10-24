@@ -48,9 +48,10 @@ function analyzeSalesData(data, options) {
     !data ||
     !options ||
     !Array.isArray(data.sellers) ||
-    !Array.isArray(
-      data.products || data.sellers.length === 0 || data.products.length === 0
-    )
+    !Array.isArray(data.products) ||
+    data.sellers.length === 0 ||
+    data.products.length === 0 ||
+    typeof calculateRevenue !== "function"
   ) {
     throw new Error("Некорректные входные данные");
   }
