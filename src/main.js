@@ -48,6 +48,8 @@ function analyzeSalesData(data, options) {
     throw new Error("Некорректные входные данные");
   }
 
+  const salesData = [];
+
   const sellers = Object.values(data.sellers);
 
   const products = Object.values(data.products);
@@ -57,26 +59,46 @@ function analyzeSalesData(data, options) {
     (item) => item.seller_id
   );
 
-  const salesData = cosolidateSales(sellers, recordsBySeller);
+  sellers.forEach((seller) => {
+    const sallerData = {};
 
-  salesData.forEach((seller) => {
+    sallerData.id = seller.id;
+    sallerData.name = `${seller.first_name} ${seller.last_name}`;
+    sallerData["revenue"] = 0;
+    sallerData["profit"] = 0;
+    sallerData["sales_count"] = 0;
+    sallerData["products_sold"] = [];
+    salesData.push(sallerData);
+
     let totalRev = 0;
     let totalCost = 0;
     let totalCount = 0;
     let productStat = [];
-    seller.products_sold.forEach((sale) => {
+
+    let totalSales = recordsBySeller[`${seller.id}`].flatMap(
+      (item) => item.items
+    );
+
+    totalSales.forEach((sale) => {
       totalRev += calculateRevenue(sale);
       totalCost += calculateTotalPurchasePrice(sale, products);
       totalCount += sale.quantity;
-      productStat = getProductStats(productStat, sale);
+      productStat = getProductStats(sale, sallerData);
+    });
+
+    productStat = Object.values(sallerData.products_sold).map((item) => {
+      let sku = {};
+      sku.sku = item.sku;
+      sku.quantity = item.quantity;
+      return sku;
     });
     productStat.sort((item1, item2) => item2.quantity - item1.quantity);
     productStat = productStat.slice(0, 10);
 
-    seller.revenue = totalRev;
-    seller.profit = totalRev - totalCost;
-    seller.sales_count = totalCount;
-    seller["top_products"] = productStat;
+    sallerData.revenue = totalRev;
+    sallerData.profit = totalRev - totalCost;
+    sallerData.sales_count = totalCount;
+    sallerData["top_products"] = productStat;
   });
 
   sortedSaleData = salesData.sort(
@@ -114,27 +136,6 @@ function groupBy(array, groupFunc) {
 
 /**
  *
- * @param sellers - массив данных с продавцами
- * @param sales - объект с данными о продажах в группировке по продавцам
- * @returns - массив с данными о продавце и проданных им товаров
- */
-function cosolidateSales(sellers, sales) {
-  const salesData = [];
-  sellers.forEach((item) => {
-    const sallerData = {};
-    sallerData.id = item.id;
-    sallerData.name = `${item.first_name} ${item.last_name}`;
-    sallerData["revenue"] = 0;
-    sallerData["profit"] = 0;
-    sallerData["sales_count"] = 0;
-    sallerData["products_sold"] = sales[item.id].flatMap((item) => item.items);
-    salesData.push(sallerData);
-  });
-  return salesData;
-}
-
-/**
- *
  * @param purchase - данные о сделке
  * @param {*} products - массив со всеми товарами
  * @returns - общую себестоимость
@@ -147,18 +148,17 @@ function calculateTotalPurchasePrice(purchase, products) {
   return product.purchase_price * quantity;
 }
 
-function getProductStats(productStat, sale) {
-  let currentSku = productStat.find((item) => item.sku === sale.sku);
-  if (currentSku == null) {
-    let sku = {};
-    sku["sku"] = sale.sku;
-    sku["quantity"] = 1;
-    productStat.push(sku);
-  } else {
-    currentSku.quantity += 1;
-  }
+function getProductStats(sale, sallerData) {
+  const { products_sold } = sallerData;
 
-  return productStat;
+  let product = products_sold.find((item) => item.sku === sale.sku);
+  if (product == null) {
+    let sku = { ...sale };
+    sku.quantity = 1;
+    products_sold.push(sku);
+  } else {
+    product.quantity += 1;
+  }
 }
 
 // function calculateRevenue(salesData, options) {
