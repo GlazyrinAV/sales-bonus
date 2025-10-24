@@ -62,7 +62,7 @@ function analyzeSalesData(data, options) {
   sellers.forEach((seller) => {
     const sellerData = {};
 
-    sellerData.id = seller.id;
+    sellerData.seller_id = seller.id;
     sellerData.name = `${seller.first_name} ${seller.last_name}`;
     sellerData["revenue"] = 0;
     sellerData["profit"] = 0;
