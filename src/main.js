@@ -28,10 +28,10 @@ function calculateBonusByProfit(index, total, seller) {
     return profit * 0.15;
   } else if (index === 2) {
     return profit * 0.1;
-  } else if (index > 2 && index < total) {
-    return profit * 0.05;
-  } else {
+  } else if (index === total) {
     return 0;
+  } else {
+    return profit * 0.05;
   }
 }
 
@@ -60,20 +60,20 @@ function analyzeSalesData(data, options) {
   );
 
   sellers.forEach((seller) => {
-    const sallerData = {};
+    const sellerData = {};
 
-    sallerData.id = seller.id;
-    sallerData.name = `${seller.first_name} ${seller.last_name}`;
-    sallerData["revenue"] = 0;
-    sallerData["profit"] = 0;
-    sallerData["sales_count"] = 0;
-    sallerData["products_sold"] = {};
-    salesData.push(sallerData);
+    sellerData.id = seller.id;
+    sellerData.name = `${seller.first_name} ${seller.last_name}`;
+    sellerData["revenue"] = 0;
+    sellerData["profit"] = 0;
+    sellerData["sales_count"] = 0;
+    salesData.push(sellerData);
 
     let totalRev = 0;
     let totalCost = 0;
     let totalCount = 0;
     let productStat = [];
+    let products_sold = {};
 
     let totalSales = recordsBySeller[`${seller.id}`].flatMap(
       (item) => item.items
@@ -83,10 +83,10 @@ function analyzeSalesData(data, options) {
       totalRev += calculateRevenue(sale);
       totalCost += calculateTotalPurchasePrice(sale, products);
       totalCount += sale.quantity;
-      productStat = getProductStats(sale, sallerData);
+      productStat = getProductStats(sale, products_sold);
     });
 
-    productStat = Object.entries(sallerData.products_sold).map(([k, v]) => {
+    productStat = Object.entries(products_sold).map(([k, v]) => {
       let sku = {};
       sku.sku = k;
       sku.quantity = v;
@@ -95,10 +95,10 @@ function analyzeSalesData(data, options) {
     productStat.sort((item1, item2) => item2.quantity - item1.quantity);
     productStat = productStat.slice(0, 10);
 
-    sallerData.revenue = totalRev;
-    sallerData.profit = totalRev - totalCost;
-    sallerData.sales_count = totalCount;
-    sallerData["top_products"] = productStat;
+    sellerData.revenue = totalRev;
+    sellerData.profit = totalRev - totalCost;
+    sellerData.sales_count = totalCount;
+    sellerData["top_products"] = productStat;
   });
 
   sortedSaleData = salesData.sort(
@@ -148,15 +148,15 @@ function calculateTotalPurchasePrice(purchase, products) {
   return product.purchase_price * quantity;
 }
 
-function getProductStats(sale, sallerData) {
-  const { products_sold } = sallerData;
-
+function getProductStats(sale, products_sold) {
   if (products_sold[`${sale.sku}`] == null) {
     let sku = {};
     products_sold[`${sale.sku}`] = 1;
   } else {
     products_sold[`${sale.sku}`] += 1;
   }
+
+  return products_sold;
 }
 
 // function calculateRevenue(salesData, options) {
