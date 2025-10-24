@@ -24,11 +24,11 @@ function calculateBonusByProfit(index, total, seller) {
     throw new Error("Некорректные входные данные");
   }
 
-  if (index === 1) {
+  if (index === 0) {
     return profit * 0.15;
-  } else if (index === 2) {
+  } else if (index === 1) {
     return profit * 0.1;
-  } else if (index === total) {
+  } else if (index === total - 1) {
     return 0;
   } else {
     return profit * 0.05;
@@ -105,12 +105,12 @@ function analyzeSalesData(data, options) {
     (seller1, seller2) => seller2.profit - seller1.profit
   );
 
-  for (let i = 1; i <= sortedSaleData.length; i++) {
+  for (let i = 0; i < sortedSaleData.length; i++) {
     console.log(sortedSaleData[i-1]);
-    sortedSaleData[i-1]["bonus"] = +calculateBonus(
+    sortedSaleData[i]["bonus"] = +calculateBonus(
       i,
       sortedSaleData.length,
-      sortedSaleData[i-1]
+      sortedSaleData[i]
     ).toFixed(2);
   }
 
