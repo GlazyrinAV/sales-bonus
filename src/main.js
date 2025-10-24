@@ -81,7 +81,7 @@ function analyzeSalesData(data, options) {
 
     totalSales.forEach((sale) => {
       totalRev += calculateRevenue(sale);
-      totalCost += calculateTotalPurchasePrice(sale, products);
+      totalCost += calculateCost(sale, products);
       totalCount += sale.quantity;
       productStat = getProductStats(sale, products_sold);
     });
@@ -95,8 +95,8 @@ function analyzeSalesData(data, options) {
     productStat.sort((item1, item2) => item2.quantity - item1.quantity);
     productStat = productStat.slice(0, 10);
 
-    sellerData.revenue = totalRev.toFixed(2);
-    sellerData.profit = (totalRev - totalCost).toFixed(2);
+    sellerData.revenue = +totalRev.toFixed(2);
+    sellerData.profit = +(totalRev - totalCost).toFixed(2);
     sellerData.sales_count = totalCount;
     sellerData["top_products"] = productStat;
   });
@@ -106,7 +106,7 @@ function analyzeSalesData(data, options) {
   );
 
   for (let i = 0; i < sortedSaleData.length; i++) {
-    sortedSaleData[i]["bonus"] = calculateBonus(
+    sortedSaleData[i]["bonus"] = +calculateBonus(
       i,
       sortedSaleData.length,
       sortedSaleData[i]
@@ -140,7 +140,7 @@ function groupBy(array, groupFunc) {
  * @param {*} products - массив со всеми товарами
  * @returns - общую себестоимость
  */
-function calculateTotalPurchasePrice(purchase, products) {
+function calculateCost(purchase, products) {
   const { sku, quantity } = purchase;
 
   let product = products.find((item) => item.sku === sku);
@@ -158,16 +158,3 @@ function getProductStats(sale, products_sold) {
 
   return products_sold;
 }
-
-// function calculateRevenue(salesData, options) {
-//   const { calculateRevenue } = options;
-
-//   salesData.forEach((seller) => {
-//     let totalRev = 0;
-//     seller.products_sold.forEach((sale) => {
-//       totalRev += calculateRevenue(sale);
-//       console.log(totalRev);
-//     });
-//     seller.revenue = totalRev;
-//   });
-// }
