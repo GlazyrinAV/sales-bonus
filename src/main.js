@@ -151,9 +151,9 @@ function calculateCost(purchase, products) {
 function getProductStats(sale, products_sold) {
   if (products_sold[`${sale.sku}`] == null) {
     let sku = {};
-    products_sold[`${sale.sku}`] = 1;
+    products_sold[`${sale.sku}`] = sale.quantity;
   } else {
-    products_sold[`${sale.sku}`] += 1;
+    products_sold[`${sale.sku}`] += sale.quantity;
   }
 
   return products_sold;
