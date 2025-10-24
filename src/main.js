@@ -79,14 +79,14 @@ function analyzeSalesData(data, options) {
     seller["top_products"] = productStat;
   });
 
-  sortedSaleData = salesData.toSorted(
+  sortedSaleData = salesData.sort(
     (seller1, seller2) => seller2.profit - seller1.profit
   );
 
   for (let i = 0; i < sortedSaleData.length; i++) {
     sortedSaleData[i]["bonus"] = calculateBonus(
       i + 1,
-      sortedSaleData.length + 1,
+      sortedSaleData.length,
       sortedSaleData[i]
     );
   }
