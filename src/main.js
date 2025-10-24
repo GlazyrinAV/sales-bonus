@@ -63,23 +63,20 @@ function analyzeSalesData(data, options) {
     let totalRev = 0;
     let totalCost = 0;
     let totalCount = 0;
-    let productStat = new Map();
+    let productStat = [];
     seller.products_sold.forEach((sale) => {
       totalRev += calculateRevenue(sale);
-      totalCost += calculateTottalPurchasePrice(sale, products);
+      totalCost += calculateTotalPurchasePrice(sale, products);
       totalCount += sale.quantity;
-      if (productStat.has(sale.sku)) {
-        productStat.set(sale.sku, productStat.get(sale.sku) + 1);
-      } else {
-        productStat.set(sale.sku, 1);
-      }
+      productStat = getProductStats(productStat, sale);
     });
-    let productSortedStat = new Array([...productStat.values()].sort((item1, item2) => item2 - item1));
-    productSortedStat.slice(0, 9);
+    productStat.sort((item1, item2) => item2.quantity - item1.quantity);
+    productStat = productStat.slice(0, 10);
+
     seller.revenue = totalRev;
     seller.profit = totalRev - totalCost;
     seller.sales_count = totalCount;
-    seller["topSales"] = productSortedStat;
+    seller["top_products"] = productStat;
   });
 
   sortedSaleData = salesData.toSorted(
@@ -142,12 +139,26 @@ function cosolidateSales(sellers, sales) {
  * @param {*} products - массив со всеми товарами
  * @returns - общую себестоимость
  */
-function calculateTottalPurchasePrice(purchase, products) {
+function calculateTotalPurchasePrice(purchase, products) {
   const { sku, quantity } = purchase;
 
   let product = products.find((item) => item.sku === sku);
 
   return product.purchase_price * quantity;
+}
+
+function getProductStats(productStat, sale) {
+  let currentSku = productStat.find((item) => item.sku === sale.sku);
+  if (currentSku == null) {
+    let sku = {};
+    sku["sku"] = sale.sku;
+    sku["quantity"] = 1;
+    productStat.push(sku);
+  } else {
+    currentSku.quantity += 1;
+  }
+
+  return productStat;
 }
 
 // function calculateRevenue(salesData, options) {
