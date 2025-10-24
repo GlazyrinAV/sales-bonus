@@ -7,7 +7,7 @@
 function calculateSimpleRevenue(purchase, _product) {
   const { discount, sale_price, quantity } = purchase;
 
-  return +(sale_price * quantity * (1 - discount / 100)).toFixed(2);
+  return sale_price * quantity * (1 - discount / 100);
 }
 
 /**
@@ -71,6 +71,7 @@ function analyzeSalesData(data, options) {
 
     let totalRev = 0;
     let totalCost = 0;
+    let totalProfit = 0;
     let totalCount = recordsBySeller[seller.id].length;
     let productStat = [];
     let products_sold = {};
@@ -80,8 +81,10 @@ function analyzeSalesData(data, options) {
     );
 
     totalSales.forEach((sale) => {
+      sellerData.revenue += +(calculateRevenue(sale)).toFixed(2);
       totalRev += calculateRevenue(sale);
       totalCost += calculateCost(sale, products);
+      totalProfit = totalRev - totalCost;
       productStat = getProductStats(sale, products_sold);
     });
 
@@ -94,8 +97,8 @@ function analyzeSalesData(data, options) {
     productStat.sort((item1, item2) => item2.quantity - item1.quantity);
     productStat = productStat.slice(0, 10);
 
-    sellerData.revenue = +totalRev.toFixed(2);
-    sellerData.profit = +(totalRev - totalCost).toFixed(2);
+    sellerData.revenue = +sellerData.revenue.toFixed(2);
+    sellerData.profit = +totalProfit.toFixed(2);
     sellerData.sales_count = totalCount;
     sellerData["top_products"] = productStat;
   });
@@ -145,7 +148,7 @@ function calculateCost(purchase, products) {
 
   let product = products.find((item) => item.sku === sku);
 
-  return +(product.purchase_price * quantity).toFixed(2);
+  return product.purchase_price * quantity;
 }
 
 function getProductStats(sale, products_sold) {
