@@ -71,7 +71,7 @@ function analyzeSalesData(data, options) {
 
     let totalRev = 0;
     let totalCost = 0;
-    let totalCount = 0;
+    let totalCount = recordsBySeller[seller.id].length;
     let productStat = [];
     let products_sold = {};
 
@@ -82,7 +82,6 @@ function analyzeSalesData(data, options) {
     totalSales.forEach((sale) => {
       totalRev += calculateRevenue(sale);
       totalCost += calculateCost(sale, products);
-      totalCount += sale.quantity;
       productStat = getProductStats(sale, products_sold);
     });
 
@@ -106,7 +105,6 @@ function analyzeSalesData(data, options) {
   );
 
   for (let i = 0; i < sortedSaleData.length; i++) {
-    console.log(sortedSaleData[i-1]);
     sortedSaleData[i]["bonus"] = +calculateBonus(
       i,
       sortedSaleData.length,
@@ -128,6 +126,7 @@ function groupBy(array, groupFunc) {
     const key = groupFunc(item);
     if (!result[key]) {
       result[key] = [];
+      result[key].push(item);
     } else {
       result[key].push(item);
     }
@@ -146,7 +145,7 @@ function calculateCost(purchase, products) {
 
   let product = products.find((item) => item.sku === sku);
 
-  return product.purchase_price * quantity;
+  return +(product.purchase_price * quantity).toFixed(2);
 }
 
 function getProductStats(sale, products_sold) {
